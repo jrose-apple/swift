@@ -135,6 +135,7 @@ func _assertionFailed(
 ///
 /// This function should not be inlined because it is cold and inlining just
 /// bloats code.
+@_versioned
 @noreturn @inline(never)
 @_semantics("stdlib_binary_only")
 func _assertionFailed(
@@ -166,6 +167,7 @@ func _assertionFailed(
 ///
 /// This function should not be inlined because it is cold and it inlining just
 /// bloats code.
+@_versioned
 @noreturn @inline(never)
 @_semantics("stdlib_binary_only")
 @_semantics("arc.programtermination_point")

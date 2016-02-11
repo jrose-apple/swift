@@ -1744,6 +1744,7 @@ final internal class _Native${Self}StorageImpl<${TypeParameters}> :
     }
   }
 
+  @_versioned // ???
   internal var _capacity: Int {
     @warn_unused_result
     get {
@@ -1948,6 +1949,7 @@ struct _Native${Self}Storage<${TypeParametersDecl}> :
     return res
   }
 
+  @_versioned
   @warn_unused_result
   internal func isInitializedEntry(i: Int) -> Bool {
     _precondition(i >= 0 && i < capacity)
@@ -2293,6 +2295,7 @@ internal struct _BridgedNative${Self}Storage {
     }
   }
 
+  @_versioned
   internal func isInitializedEntry(i: Int) -> Bool {
     return initializedEntries[i]
   }

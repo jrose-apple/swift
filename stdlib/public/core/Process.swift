@@ -23,7 +23,9 @@ public enum Process {
     return result 
   }
 
+  @_versioned
   internal static var _argc: CInt = CInt()
+  @_versioned
   internal static var _unsafeArgv:
     UnsafeMutablePointer<UnsafeMutablePointer<Int8>>
     = nil

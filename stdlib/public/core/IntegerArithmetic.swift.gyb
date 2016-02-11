@@ -122,7 +122,11 @@ public prefix func + <T : SignedNumberType>(x: T) -> T {
 }
 
 //===--- abs(x) -----------------------------------------------------------===//
-public struct _Abs {}
+public struct _Abs {
+  @_transparent
+  internal init() {}
+}
+@_transparent
 internal func _abs<Args>(args: Args) -> (_Abs, Args) {
   return (_Abs(), args)
 }
