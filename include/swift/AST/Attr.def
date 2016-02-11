@@ -242,6 +242,11 @@ SIMPLE_DECL_ATTR(indirect, Indirect,
 SIMPLE_DECL_ATTR(warn_unqualified_access, WarnUnqualifiedAccess,
                  OnFunc /*| OnVar*/ | LongAttribute, 61)
 
+// A testing attribute for Library Evolution ("resilience").
+SIMPLE_DECL_ATTR(_versioned, Versioned,
+                 OnFunc | OnVar | OnSubscript | OnConstructor | LongAttribute,
+                 62)
+
 #undef TYPE_ATTR
 #undef DECL_ATTR_ALIAS
 #undef SIMPLE_DECL_ATTR

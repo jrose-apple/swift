@@ -912,6 +912,22 @@ public:
     }
   }
 
+  /// Returns true if \p FRI is only used as a callee and will always be
+  /// inlined at those call sites.
+  static bool isAlwaysInlined(FunctionRefInst *FRI) {
+    if (FRI->getReferencedFunction()->getInlineStrategy() != AlwaysInline &&
+        !FRI->getReferencedFunction()->isTransparent()) {
+      return false;
+    }
+
+    for (auto use : FRI->getUses()) {
+      auto site = FullApplySite::isa(use->getUser());
+      if (!site || site.getCallee() != FRI)
+        return false;
+    }
+    return true;
+  }
+
   void checkFunctionRefInst(FunctionRefInst *FRI) {
     auto fnType = requireObjectType(SILFunctionType, FRI,
                                     "result of function_ref");
@@ -921,7 +937,8 @@ public:
       SILFunction *RefF = FRI->getReferencedFunction();
       require(RefF->isFragile()
                 || isValidLinkageForFragileRef(RefF->getLinkage())
-                || RefF->isExternalDeclaration(),
+                || RefF->isExternalDeclaration()
+                || isAlwaysInlined(FRI),
               "function_ref inside fragile function cannot "
               "reference a private or hidden symbol");
     }
