@@ -499,8 +499,12 @@ SILCombiner::optimizeApplyOfConvertFunctionInst(FullApplySite AI,
   return NAI;
 }
 
-bool
-SILCombiner::recursivelyCollectARCUsers(UserListTy &Uses, ValueBase *Value) {
+/// Collects a list of instructions that project or perform reference
+/// counting operations on \p Value or on its uses.
+///
+/// \return false if \p Value has any non-ARC uses.
+static bool recursivelyCollectARCUsers(SmallVectorImpl<SILInstruction *> &Uses,
+                                       ValueBase *Value) {
   for (auto *Use : Value->getUses()) {
     SILInstruction *Inst = Use->getUser();
     if (isa<RefCountingInst>(Inst) ||
@@ -520,28 +524,41 @@ SILCombiner::recursivelyCollectARCUsers(UserListTy &Uses, ValueBase *Value) {
   return true;
 }
 
+/// Collects a list of instructions that project or perform reference
+/// counting operations on \p AI or its indirect results, or on their uses.
+///
+/// \return false if \p AI or its indirect results have any non-ARC uses.
+static bool recursivelyCollectARCUsers(SmallVectorImpl<SILInstruction *> &Uses,
+                                       ApplyInst *AI) {
+  if (!recursivelyCollectARCUsers(Uses, static_cast<ValueBase *>(AI)))
+    return false;
+  for (ValueBase *IndirectResult : AI->getIndirectResults()) {
+    if (!recursivelyCollectARCUsers(Uses, IndirectResult))
+      return false;
+  }
+  return true;
+}
+
 void SILCombiner::eraseApply(FullApplySite FAS, const UserListTy &Users) {
   // Make sure to release and destroy any owned or in-arguments.
-  auto FuncType = FAS.getOrigCalleeType();
-  assert(FuncType->getParameters().size() == FAS.getNumArguments() &&
-         "mismatching number of arguments");
   for (int i = 0, e = FAS.getNumArguments(); i < e; ++i) {
-    SILParameterInfo PI = FuncType->getParameters()[i];
-    auto Arg = FAS.getArgument(i);
-    switch (PI.getConvention()) {
-      case ParameterConvention::Indirect_In:
-        Builder.createDestroyAddr(FAS.getLoc(), Arg);
-        break;
-      case ParameterConvention::Direct_Owned:
-        Builder.createReleaseValue(FAS.getLoc(), Arg);
-        break;
-      case ParameterConvention::Indirect_In_Guaranteed:
-      case ParameterConvention::Indirect_Inout:
-      case ParameterConvention::Indirect_InoutAliasable:
-      case ParameterConvention::Direct_Unowned:
-      case ParameterConvention::Direct_Deallocating:
-      case ParameterConvention::Direct_Guaranteed:
-        break;
+    switch (FAS.getArgumentConvention(i)) {
+    case SILArgumentConvention::Indirect_In:
+      Builder.createDestroyAddr(FAS.getLoc(), FAS.getArgument(i));
+      break;
+    case SILArgumentConvention::Direct_Owned:
+      Builder.createReleaseValue(FAS.getLoc(), FAS.getArgument(i));
+      break;
+    case SILArgumentConvention::Indirect_Out:
+      eraseInstFromFunction(*cast<SILInstruction>(FAS.getArgument(i)));
+      break;
+    case SILArgumentConvention::Indirect_In_Guaranteed:
+    case SILArgumentConvention::Indirect_Inout:
+    case SILArgumentConvention::Indirect_InoutAliasable:
+    case SILArgumentConvention::Direct_Unowned:
+    case SILArgumentConvention::Direct_Deallocating:
+    case SILArgumentConvention::Direct_Guaranteed:
+      break;
     }
   }
 

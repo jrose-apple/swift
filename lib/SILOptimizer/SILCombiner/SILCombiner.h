@@ -272,11 +272,6 @@ private:
 
   typedef SmallVector<SILInstruction*, 4> UserListTy;
 
-  /// \brief Returns a list of instructions that project or perform reference
-  /// counting operations on \p Value or on its uses.
-  /// \return return false if \p Value has other than ARC uses.
-  static bool recursivelyCollectARCUsers(UserListTy &Uses, ValueBase *Value);
-
   /// Erases an apply instruction including all it's uses \p.
   /// Inserts release/destroy instructions for all owner and in-parameters.
   void eraseApply(FullApplySite FAS, const UserListTy &Users);
