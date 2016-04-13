@@ -5928,7 +5928,7 @@ bool TypeChecker::isAvailabilitySafeForOverride(ValueDecl *override,
   AvailabilityContext baseInfo =
       AvailabilityInference::availableRange(base, Context);
 
-  return baseInfo.isContainedIn(overrideInfo);
+  return baseInfo.isContainedInIgnoringInlineability(overrideInfo);
 }
 
 bool TypeChecker::isAvailabilitySafeForConformance(
@@ -5956,6 +5956,7 @@ bool TypeChecker::isAvailabilitySafeForConformance(
   AvailabilityContext witnessInfo =
       AvailabilityInference::availableRange(witness, Context);
   requirementInfo = AvailabilityInference::availableRange(requirement, Context);
+  assert(!requirementInfo.isInlineable());
 
   AvailabilityContext infoForConformingDecl =
       overApproximateAvailabilityAtLocation(conformingDecl->getLoc(),

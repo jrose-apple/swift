@@ -2136,7 +2136,7 @@ public:
   SourceLoc getLoc() const { return NameLoc; }
 
   bool hasType() const { return !TypeAndAccess.getPointer().isNull(); }
-  Type getType() const {
+  Type getTypeInContext() const {
     assert(hasType() && "declaration has no type set yet");
     return TypeAndAccess.getPointer();
   }
@@ -4322,7 +4322,9 @@ public:
   SourceLoc getArgumentNameLoc() const { return ArgumentNameLoc; }
 
   SourceLoc getLetVarInOutLoc() const { return LetVarInOutLoc; }
-  
+
+  Type getType() const { return getTypeInContext(); }
+
   TypeLoc &getTypeLoc() { return typeLoc; }
   TypeLoc getTypeLoc() const { return typeLoc; }
 

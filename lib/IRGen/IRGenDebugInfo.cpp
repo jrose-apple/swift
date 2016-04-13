@@ -1506,7 +1506,7 @@ llvm::DIType *IRGenDebugInfo::createType(DebugTypeInfo DbgTy,
     // Emit the protocols the archetypes conform to.
     SmallVector<llvm::Metadata *, 4> Protocols;
     for (auto *ProtocolDecl : Archetype->getConformsTo()) {
-      auto PTy = IGM.SILMod->Types.getLoweredType(ProtocolDecl->getType())
+      auto PTy = IGM.SILMod->Types.getLoweredType(ProtocolDecl->getInterfaceType())
                      .getSwiftRValueType();
       auto PDbgTy = DebugTypeInfo(ProtocolDecl, IGM.getTypeInfoForLowered(PTy));
       auto PDITy = getOrCreateType(PDbgTy);

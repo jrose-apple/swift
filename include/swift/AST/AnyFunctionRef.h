@@ -75,7 +75,7 @@ public:
 
   Type getType() const {
     if (auto *AFD = TheFunction.dyn_cast<AbstractFunctionDecl *>())
-      return AFD->getType();
+      return AFD->getTypeInContext();
     return TheFunction.get<AbstractClosureExpr *>()->getType();
   }
   

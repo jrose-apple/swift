@@ -1671,10 +1671,10 @@ Type ValueDecl::getInterfaceType() const {
 
   if (auto assocType = dyn_cast<AssociatedTypeDecl>(this)) {
     auto proto = cast<ProtocolDecl>(getDeclContext());
-    (void)proto->getType(); // make sure we've computed the type.
+    (void)proto->getTypeInContext(); // make sure we've computed the type.
     // FIXME: the generic parameter types list should never be empty.
     auto selfTy = proto->getInnermostGenericParamTypes().empty()
-                    ? proto->getProtocolSelf()->getType()
+                    ? proto->getProtocolSelf()->getTypeInContext()
                     : proto->getInnermostGenericParamTypes().back();
     auto &ctx = getASTContext();
     InterfaceTy = DependentMemberType::get(
@@ -1689,7 +1689,7 @@ Type ValueDecl::getInterfaceType() const {
     return Type();
 
   // If the type involves a type variable, don't cache it.
-  auto type = getType();
+  auto type = getTypeInContext();
   assert((type.isNull() || !type->is<PolymorphicFunctionType>())
          && "decl has polymorphic function type but no interface type");
 
@@ -1724,13 +1724,13 @@ SourceLoc ValueDecl::getAttributeInsertionLoc(bool forModifier) const {
 
 Type TypeDecl::getDeclaredType() const {
   if (auto TAD = dyn_cast<TypeAliasDecl>(this)) {
-    if (TAD->hasType() && TAD->getType()->is<ErrorType>())
-      return TAD->getType();
+    if (TAD->hasType() && TAD->getInterfaceType()->is<ErrorType>())
+      return TAD->getTypeInContext();
 
     return TAD->getAliasType();
   }
   if (auto typeParam = dyn_cast<AbstractTypeParamDecl>(this)) {
-    auto type = typeParam->getType();
+    auto type = typeParam->getTypeInContext();
     if (type->is<ErrorType>())
       return type;
 
@@ -3660,7 +3660,7 @@ static bool isIntegralType(Type type) {
       return false;
 
     // Check whether it has integer type.
-    return singleVar->getType()->is<BuiltinIntegerType>();
+    return singleVar->getInterfaceType()->is<BuiltinIntegerType>();
   }
 
   return false;
@@ -3674,7 +3674,7 @@ void SubscriptDecl::setIndices(ParameterList *p) {
 }
 
 Type SubscriptDecl::getIndicesType() const {
-  const auto type = getType();
+  const auto type = getTypeInContext();
   if (type->is<ErrorType>())
     return type;
   return type->castTo<AnyFunctionType>()->getInput();
@@ -4188,7 +4188,7 @@ Type FuncDecl::getResultType() const {
   if (!hasType())
     return nullptr;
 
-  Type resultTy = getType();
+  Type resultTy = getTypeInContext();
   if (resultTy->is<ErrorType>())
     return resultTy;
 
@@ -4205,7 +4205,7 @@ bool AbstractFunctionDecl::isBodyThrowing() const {
   if (!hasType())
     return false;
 
-  Type type = getType();
+  Type type = getInterfaceType();
   if (type->is<ErrorType>())
     return false;
 
@@ -4432,14 +4432,14 @@ SourceRange ConstructorDecl::getSourceRange() const {
 }
 
 Type ConstructorDecl::getArgumentType() const {
-  Type ArgTy = getType();
+  Type ArgTy = getTypeInContext();
   ArgTy = ArgTy->castTo<AnyFunctionType>()->getResult();
   ArgTy = ArgTy->castTo<AnyFunctionType>()->getInput();
   return ArgTy;
 }
 
 Type ConstructorDecl::getResultType() const {
-  Type ArgTy = getType();
+  Type ArgTy = getTypeInContext();
   ArgTy = ArgTy->castTo<AnyFunctionType>()->getResult();
   ArgTy = ArgTy->castTo<AnyFunctionType>()->getResult();
   return ArgTy;

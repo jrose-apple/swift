@@ -80,7 +80,7 @@ DebugTypeInfo::DebugTypeInfo(ValueDecl *Decl, const TypeInfo &Info)
   if (auto AliasDecl = dyn_cast<TypeAliasDecl>(Decl))
     Type = AliasDecl->getAliasType();
   else
-    Type = Decl->getType().getPointer();
+    Type = Decl->getInterfaceType().getPointer();
 
   initFromTypeInfo(size, align, StorageType, Info);
 }
@@ -95,7 +95,7 @@ DebugTypeInfo::DebugTypeInfo(ValueDecl *Decl, llvm::Type *StorageTy,
   if (auto AliasDecl = dyn_cast<TypeAliasDecl>(Decl))
     Type = AliasDecl->getAliasType();
   else
-    Type = Decl->getType().getPointer();
+    Type = Decl->getInterfaceType().getPointer();
 
   assert(StorageType && "StorageType is a nullptr");
   assert(align.getValue() != 0);
@@ -106,7 +106,7 @@ DebugTypeInfo::DebugTypeInfo(ValueDecl *Decl, swift::Type Ty,
   : DeclOrContext(Decl) {
   // Prefer the original, potentially sugared version of the type if
   // the type hasn't been mucked with by an optimization pass.
-  CanType DeclType = Decl->getType()->getCanonicalType();
+  CanType DeclType = Decl->getInterfaceType()->getCanonicalType();
   CanType RealType = Ty.getCanonicalTypeOrNull();
   if (Unwrap) {
     DeclType = DeclType.getLValueOrInOutObjectType();
@@ -121,8 +121,8 @@ DebugTypeInfo::DebugTypeInfo(ValueDecl *Decl, swift::Type Ty,
   RealType = RealType->getDesugaredType()->getCanonicalType();
 
   if ((DeclType == RealType) || isa<AnyFunctionType>(DeclType))
-    Type = Unwrap ? Decl->getType()->getLValueOrInOutObjectType().getPointer()
-                  : Decl->getType().getPointer();
+    Type = Unwrap ? Decl->getInterfaceType()->getLValueOrInOutObjectType().getPointer()
+                  : Decl->getInterfaceType().getPointer();
   else
     Type = RealType.getPointer();
 
@@ -138,8 +138,8 @@ DebugTypeInfo::DebugTypeInfo(ValueDecl *Decl, swift::Type Ty,
     align(align) {
   // Prefer the original, potentially sugared version of the type if
   // the type hasn't been mucked with by an optimization pass.
-  if (Decl->getType().getCanonicalTypeOrNull() == Ty.getCanonicalTypeOrNull())
-    Type = Decl->getType().getPointer();
+  if (Decl->getInterfaceType()->isEqual(Ty))
+    Type = Decl->getInterfaceType().getPointer();
   else
     Type = Ty.getPointer();
 }

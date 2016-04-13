@@ -894,14 +894,14 @@ bool SILParser::parseSILDottedPath(ValueDecl *&Decl,
                       FullName.size() == 2/*ExpectMultipleResults*/);
     for (unsigned I = 2, E = FullName.size(); I < E; I++) {
       values.clear();
-      VD = lookupMember(P, VD->getType(), FullName[I], Locs[I], values,
+      VD = lookupMember(P, VD->getTypeInContext(), FullName[I], Locs[I], values,
                         I == FullName.size() - 1/*ExpectMultipleResults*/);
     }
   } else {
     VD = Res.get<ValueDecl*>();
     for (unsigned I = 1, E = FullName.size(); I < E; I++) {
       values.clear();
-      VD = lookupMember(P, VD->getType(), FullName[I], Locs[I], values,
+      VD = lookupMember(P, VD->getTypeInContext(), FullName[I], Locs[I], values,
                         I == FullName.size() - 1/*ExpectMultipleResults*/);
     }
   }
@@ -4073,7 +4073,7 @@ static AssociatedTypeDecl *parseAssociatedTypeDecl(Parser &P, SILParser &SP,
   // One example is two decls when searching for Generator of Sequence:
   // one from Sequence, the other from _Sequence_Type.
   SmallVector<ValueDecl *, 4> values;
-  auto VD = lookupMember(P, proto->getType(), DeclName, DeclLoc,
+  auto VD = lookupMember(P, proto->getTypeInContext(), DeclName, DeclLoc,
                          values, true/*ExpectMultipleResults*/);
   if (!VD) {
     P.diagnose(DeclLoc, diag::sil_witness_assoc_not_found, DeclName);

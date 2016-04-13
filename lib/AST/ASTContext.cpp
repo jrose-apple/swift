@@ -757,7 +757,7 @@ static VarDecl *getPointeeProperty(VarDecl *&cache,
   // The property must have type T.
   VarDecl *property = dyn_cast<VarDecl>(results[0]);
   if (!property) return nullptr;
-  if (!property->getType()->isEqual(generics->getPrimaryArchetypes()[0]))
+  if (!property->getTypeInContext()->isEqual(generics->getPrimaryArchetypes()[0]))
     return nullptr;
 
   cache = property;
@@ -905,7 +905,7 @@ static CanType stripImmediateLabels(CanType type) {
 /// Check whether the given function is non-generic.
 static bool isNonGenericIntrinsic(FuncDecl *fn, CanType &input,
                                   CanType &output) {
-  auto fnType = dyn_cast<FunctionType>(fn->getType()->getCanonicalType());
+  auto fnType = dyn_cast<FunctionType>(fn->getInterfaceType()->getCanonicalType());
   if (!fnType)
     return false;
 

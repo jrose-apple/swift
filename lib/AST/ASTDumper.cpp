@@ -551,13 +551,13 @@ namespace {
 
       OS << " type='";
       if (VD->hasType())
-        VD->getType().print(OS);
+        VD->getTypeInContext().print(OS);
       else
         OS << "<null type>";
 
       if (VD->hasInterfaceType() &&
           (!VD->hasType() ||
-           VD->getInterfaceType().getPointer() != VD->getType().getPointer())) {
+           VD->getInterfaceType().getPointer() != VD->getTypeInContext().getPointer())) {
         OS << "' interface type='";
         VD->getInterfaceType()->getCanonicalType().print(OS);
       }

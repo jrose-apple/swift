@@ -1368,7 +1368,7 @@ namespace {
       // originally-declared type.
       SILType fieldType =
         IGM.getLoweredType(IGM.SILMod->Types.getAbstractionPattern(var),
-                           var->getType());
+                           var->getTypeInContext());
       Ivars.push_back(buildIvar(var, fieldType));
 
       // Build property accessors for the ivar if necessary.
@@ -1522,7 +1522,7 @@ namespace {
     void buildPropertyAttributes(VarDecl *prop, SmallVectorImpl<char> &out) {
       llvm::raw_svector_ostream outs(out);
 
-      auto propTy = prop->getType()->getReferenceStorageReferent();
+      auto propTy = prop->getInterfaceType()->getReferenceStorageReferent();
       
       // Emit the type encoding for the property.
       outs << 'T';
