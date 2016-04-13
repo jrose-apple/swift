@@ -2908,12 +2908,11 @@ bool ClangImporter::Implementation::shouldSuppressDeclImport(
 
     if (objcClass) {
       if (auto objcSuperclass = objcClass->getSuperClass()) {
-        if (auto getterMethod
-              = objcSuperclass->lookupInstanceMethod(
-                  objcProperty->getGetterName())) {
-          if (!shouldSuppressDeclImport(getterMethod))
-            return true;
-        }
+        auto getterMethod =
+            objcSuperclass->lookupMethod(objcProperty->getGetterName(),
+                                         objcProperty->isInstanceProperty());
+        if (getterMethod && !shouldSuppressDeclImport(getterMethod))
+          return true;
       }
     }
 
