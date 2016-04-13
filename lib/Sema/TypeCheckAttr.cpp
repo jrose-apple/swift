@@ -858,7 +858,8 @@ void AttributeChecker::visitAvailableAttr(AvailableAttr *attr) {
   AvailabilityContext AttrRange{
       VersionRange::allGTE(attr->Introduced.getValue())};
 
-  if (!AttrRange.isContainedIn(EnclosingAnnotatedRange.getValue())) {
+  if (!AttrRange.isContainedInIgnoringInlineability(
+          EnclosingAnnotatedRange.getValue())) {
     TC.diagnose(attr->getLocation(),
                 diag::availability_decl_more_than_enclosing);
     TC.diagnose(EnclosingDecl->getLoc(),

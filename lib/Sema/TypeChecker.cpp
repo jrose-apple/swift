@@ -967,6 +967,8 @@ private:
     AvailabilityContext DeclInfo =
         swift::AvailabilityInference::availableRange(D, TC.Context);
     DeclInfo.intersectWith(getCurrentTRC()->getAvailabilityInfo());
+    if (D->getAttrs().hasAttribute<TransparentAttr>())
+      DeclInfo = DeclInfo.asInlineable();
 
     TypeRefinementContext *NewTRC =
         TypeRefinementContext::createForDecl(TC.Context, D, getCurrentTRC(),
@@ -1262,7 +1264,7 @@ private:
       // If the version range for the current TRC is completely contained in
       // the range for the spec, then a version query can never be false, so the
       // spec is useless. If so, report this.
-      if (CurrentInfo.isContainedIn(NewConstraint)) {
+      if (CurrentInfo.isContainedInIgnoringInlineability(NewConstraint)) {
         DiagnosticEngine &Diags = TC.Diags;
         if (CurrentTRC->getReason() == TypeRefinementContext::Reason::Root) {
           // Diagnose for checks that are useless because the minimum deployment

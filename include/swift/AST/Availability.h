@@ -236,6 +236,7 @@ public:
 /// [lattice]: http://mathworld.wolfram.com/Lattice.html
 class AvailabilityContext {
   VersionRange OSVersion;
+  bool Inlineable = false;
 public:
   /// Creates a context that requires certain versions of the target OS.
   explicit AvailabilityContext(VersionRange OSVersion) : OSVersion(OSVersion) {}
@@ -257,10 +258,37 @@ public:
   /// Returns the range of possible OS versions required by this context.
   VersionRange getOSVersion() const { return OSVersion; }
 
+  /// Returns true if this context represents code that may be inlined into
+  /// another module.
+  bool isInlineable() const {
+    return Inlineable;
+  }
+
+  /// Returns a new AvailabilityContext that matches this one, but with the
+  /// additional restrictions on inlineable code.
+  ///
+  /// If this context is already inlineable, the result will be the same.
+  AvailabilityContext asInlineable() {
+    AvailabilityContext result = *this;
+    result.Inlineable = true;
+    return result;
+  }
+
   /// Returns true if \p other makes stronger guarantees than this context.
   ///
   /// That is, `a.isContainedIn(b)` implies `a.union(b) == b`.
   bool isContainedIn(AvailabilityContext other) const {
+    if (!Inlineable && other.isInlineable())
+      return false;
+    return isContainedInIgnoringInlineability(other);
+  }
+
+  /// Returns true if \p other makes stronger guarantees than this context,
+  /// ignoring possible differences in inlineability.
+  ///
+  /// That is, `a.isContainedInIgnoringInlineablity(b)` implies
+  /// `a.asInlineable().union(b) == b.asInlineable()`.
+  bool isContainedInIgnoringInlineability(AvailabilityContext other) const {
     return OSVersion.isContainedIn(other.OSVersion);
   }
 
@@ -290,6 +318,7 @@ public:
   /// for a type that references multiple nominal decls.
   void intersectWith(AvailabilityContext other) {
     OSVersion.intersectWith(other.getOSVersion());
+    Inlineable &= other.isInlineable();
   }
 
   /// Produces an over-approximation of the intersection of the two
@@ -301,6 +330,7 @@ public:
   /// As an example, this is used for the true branch of `#available`.
   void constrainWith(AvailabilityContext other) {
     OSVersion.constrainWith(other.getOSVersion());
+    Inlineable &= other.isInlineable();
   }
 
   /// Produces an over-approximation of the union of two availability contexts.
@@ -313,6 +343,7 @@ public:
   /// multiple `#available` checks.
   void unionWith(AvailabilityContext other) {
     OSVersion.unionWith(other.getOSVersion());
+    Inlineable |= other.isInlineable();
   }
 };
 
