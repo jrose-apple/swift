@@ -17,6 +17,7 @@ set(sources
   DispatchOverlayShims.h
   ObjectiveCOverlayShims.h
   OSOverlayShims.h
+  PlatformShims.h
   SafariServicesOverlayShims.h
   XCTestOverlayShims.h
   XPCOverlayShims.h

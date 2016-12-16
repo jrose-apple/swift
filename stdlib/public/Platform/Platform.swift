@@ -10,6 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+import _SwiftPlatformOverlayShims
+
 #if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
 //===----------------------------------------------------------------------===//
 // MacTypes.h
@@ -74,12 +76,6 @@ func _convertDarwinBooleanToBool(_ x: DarwinBoolean) -> Bool {
 //===----------------------------------------------------------------------===//
 // sys/errno.h
 //===----------------------------------------------------------------------===//
-
-@_silgen_name("_swift_Platform_getErrno")
-func _swift_Platform_getErrno() -> Int32
-
-@_silgen_name("_swift_Platform_setErrno")
-func _swift_Platform_setErrno(_: Int32)
 
 public var errno : Int32 {
   get {
