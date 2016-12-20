@@ -446,7 +446,6 @@ void CompilerInstance::performSema() {
 
     Diags.setSuppressWarnings(DidSuppressWarnings);
 
-    performConditionResolution(*NextInput);
     performNameBinding(*NextInput);
   }
 
@@ -509,10 +508,8 @@ void CompilerInstance::performSema() {
     if (mainIsPrimary && !Context->hadError() &&
         Invocation.getFrontendOptions().PlaygroundTransform)
       performPlaygroundTransform(MainFile, Invocation.getFrontendOptions().PlaygroundHighPerformance);
-    if (!mainIsPrimary) {
-      performConditionResolution(MainFile);
+    if (!mainIsPrimary)
       performNameBinding(MainFile);
-    }
   }
 
   // Type-check each top-level input besides the main source file.

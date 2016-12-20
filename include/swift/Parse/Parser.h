@@ -59,11 +59,10 @@ namespace swift {
     TopLevelCode,
     /// The top-level of a file, when in parse-as-library mode.
     TopLevelLibrary,
-    /// The body of the clause of an #if/#else/#endif block
-    ConditionalBlock,
-    /// The body of the clause of an #if/#else/#endif block that was statically
-    /// determined to be inactive.
-    StaticallyInactiveConditionalBlock,
+    /// The body of the inactive clause of an #if/#else/#endif block
+    InactiveConditionalBlock,
+    /// The body of the active clause of an #if/#else/#endif block
+    ActiveConditionalBlock
   };
 
   
@@ -620,7 +619,7 @@ public:
                                    BraceItemListKind::Brace);
   ParserResult<BraceStmt> parseBraceItemList(Diag<> ID);
   
-  void parseIfConfigClauseElements(bool isInactive,
+  void parseIfConfigClauseElements(bool isActive,
                                    BraceItemListKind Kind,
                                    SmallVectorImpl<ASTNode> &Elements);
   
@@ -647,7 +646,7 @@ public:
     PD_InExtension          = 1 << 8,
     PD_InStruct             = 1 << 9,
     PD_InEnum               = 1 << 10,
-    PD_InLoop               = 1 << 11,
+    PD_InLoop               = 1 << 11
   };
 
   /// Options that control the parsing of declarations.
@@ -1230,14 +1229,9 @@ public:
   ParserResult<Stmt> parseStmtSwitch(LabeledStmtInfo LabelInfo);
   ParserResult<CaseStmt> parseStmtCase();
 
-  /// Classify the condition of an #if directive according to whether it can
-  /// be evaluated statically.  If evaluation is not possible, the result is
-  /// 'None'.
-  static Optional<bool>
-  classifyConditionalCompilationExpr(Expr *condition,
-                                     ASTContext &context,
-                                     DiagnosticEngine &diags,
-                                     bool fullCheck = false);
+  /// Evaluate the condition of an #if directive.
+  ConditionalCompilationExprState
+  evaluateConditionalCompilationExpr(Expr *condition);
 
   //===--------------------------------------------------------------------===//
   // Generics Parsing
