@@ -17,6 +17,7 @@
 
 #include "swift/Subsystems.h"
 #include "TypeChecker.h"
+#include "MiscDiagnostics.h"
 #include "GenericTypeResolver.h"
 #include "swift/AST/ASTWalker.h"
 #include "swift/AST/ASTVisitor.h"
@@ -733,6 +734,7 @@ void swift::performWholeModuleTypeChecking(SourceFile &SF) {
   Ctx.diagnoseObjCMethodConflicts(SF);
   Ctx.diagnoseObjCUnsatisfiedOptReqConflicts(SF);
   Ctx.diagnoseUnintendedObjCMethodOverrides(SF);
+  performTopLevelDeclDiagnostics(SF);
 }
 
 bool swift::performTypeLocChecking(ASTContext &Ctx, TypeLoc &T,
