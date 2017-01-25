@@ -693,6 +693,7 @@ void swift::performTypeChecking(SourceFile &SF, TopLevelContext &TLC,
       TC.processREPLTopLevel(SF, TLC, StartElem);
 
     typeCheckFunctionsAndExternalDecls(TC);
+    performTopLevelDeclDiagnostics(SF);
   }
 
   // Checking that benefits from having the whole module available.
@@ -734,7 +735,6 @@ void swift::performWholeModuleTypeChecking(SourceFile &SF) {
   Ctx.diagnoseObjCMethodConflicts(SF);
   Ctx.diagnoseObjCUnsatisfiedOptReqConflicts(SF);
   Ctx.diagnoseUnintendedObjCMethodOverrides(SF);
-  performTopLevelDeclDiagnostics(SF);
 }
 
 bool swift::performTypeLocChecking(ASTContext &Ctx, TypeLoc &T,
