@@ -1,4 +1,5 @@
-// RUN: rm %t && %target-build-swift -I %S/icu %s -o %t && %target-run %t
+// RUN: rm %t && %target-build-swift -I %S/icu -licucore %s -o %t
+// RUN: %target-run %t
 // REQUIRES: executable_test
 
 import StdlibUnittest
@@ -369,7 +370,10 @@ where Encoding.EncodedScalar.Iterator.Element == CodeUnits.Iterator.Element,
   CodeUnits.SubSequence.SubSequence == CodeUnits.SubSequence,
   CodeUnits.SubSequence.Iterator.Element == CodeUnits.Iterator.Element {
 
-  init(_ codeUnits: CodeUnits) { self.codeUnits = codeUnits }
+  init(_ codeUnits: CodeUnits, _: Encoding.Type = Encoding.self) {
+    self.codeUnits = codeUnits
+  }
+  
   let codeUnits: CodeUnits
 }
 
@@ -552,7 +556,7 @@ extension UnicodeStorage : _UTextable {
     ).count^
   }
   
-  public func withUText<R>(_ body: (UnsafePointer<UText>)->R) -> R {
+  public func withUText<R>(_ body: (UnsafeMutablePointer<UText>)->R) -> R {
 
     var copy: _UTextable = self
 
@@ -606,9 +610,10 @@ extension UnicodeStorage : _UTextable {
 
       func impl(
         _ vtable: UnsafePointer<UTextFuncs>,
-        _ body: (UnsafePointer<UText>)->R // why must I pass body explicitly here?
-      ) -> R {                            // if I don't, the compiler complains it
-                                          // might escape.
+        _ body: (UnsafeMutablePointer<UText>)->R // why must I pass body
+                                                 // explicitly here?
+      ) -> R {                                   // if I don't, the compiler
+                                                 // complains it might escape.
         var u = UText(
           magic: UInt32(UTEXT_MAGIC),
           flags: 0,
@@ -633,6 +638,60 @@ extension UnicodeStorage : _UTextable {
       return impl(&vtable, body)
     }
   }
+}
+
+extension UnicodeStorage {
+  var scalars: ParsedUnicode<CodeUnits, Encoding> {
+    return ParsedUnicode(codeUnits, Encoding.self)
+  }
+}
+
+struct CharacterView<
+  CodeUnits : RandomAccessCollection,
+  Encoding : UnicodeEncoding
+> 
+where Encoding.EncodedScalar.Iterator.Element == CodeUnits.Iterator.Element,
+  CodeUnits.SubSequence : RandomAccessCollection,
+  CodeUnits.SubSequence.Index == CodeUnits.Index,
+  CodeUnits.SubSequence.SubSequence == CodeUnits.SubSequence,
+  CodeUnits.SubSequence.Iterator.Element == CodeUnits.Iterator.Element {
+
+  init(_ codeUnits: CodeUnits, _: Encoding.Type = Encoding.self) {
+    self.storage = UnicodeStorage(codeUnits)
+  }
+  
+  fileprivate let storage: UnicodeStorage<CodeUnits, Encoding>
+}
+
+extension CharacterView /*: BidirectionalCollection*/ {
+  typealias Index = ParsedUnicode<CodeUnits, Encoding>.Index
+  
+  var startIndex: Index { return storage.scalars.startIndex }
+  var endIndex: Index { return storage.scalars.endIndex }
+  
+  subscript(i: Index) -> Character {
+    var err = U_ZERO_ERROR;
+    
+    let bi = ubrk_open(
+      /*type:*/ UBRK_CHARACTER, /*locale:*/ nil,
+      /*text:*/ nil, /*textLength:*/ 0, /*status:*/ &err)
+    assert(err == U_ZERO_ERROR, "unexpected ubrk_open failure")
+    defer { ubrk_close(bi) }
+    
+    storage.withUText { u in
+      ubrk_setUText(bi, u, &err)
+    }
+/*
+    
+    p = ubrk_first(bi);
+    while (p != UBRK_DONE) {
+      printf("Boundary at position %d\n", p);
+      p = ubrk_next(bi);
+    }
+    */
+    ubrk_close(bi);
+    return "b"
+  }    
 }
 
 struct Latin1String<Base : RandomAccessCollection> : Unicode
@@ -756,5 +815,11 @@ t.test("basic") {
     expectFalse(nonASCII.isASCII(scan: true))
     expectFalse(nonASCII.isASCII(scan: false))
   }
+}
+
+t.test("CharacterView") {
+  let x = CharacterView([44], UTF8.self)
+  print(x)
+  print(x[x.startIndex])
 }
 runAllTests()
