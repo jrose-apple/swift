@@ -5094,8 +5094,10 @@ Parser::parseDeclEnumCase(ParseDeclOptions Flags,
     }
     
     // Create the element.
+    TypeRepr *ArgTR = ArgType.getPtrOrNull();
     auto *result = new (Context) EnumElementDecl(NameLoc, Name,
-                                                 ArgType.getPtrOrNull(),
+                                                 ArgTR,
+                                                 ArgTR != nullptr,
                                                  EqualsLoc,
                                                  LiteralRawValueExpr,
                                                  CurDeclContext);
