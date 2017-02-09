@@ -561,6 +561,9 @@ public protocol Collection : _Indexable, Sequence {
   /// type.
   associatedtype Iterator : IteratorProtocol = IndexingIterator<Self>
 
+  associatedtype Segments : _Indexable = EmptyCollection<Self>
+  var segments : Segments? { get }
+  
   // FIXME(ABI)#179 (Type checker): Needed here so that the `Iterator` is properly deduced from
   // a custom `makeIterator()` function.  Otherwise we get an
   // `IndexingIterator`. <rdar://problem/21539115>
@@ -1180,6 +1183,10 @@ extension Collection where SubSequence == Self {
     self = self[index(after: startIndex)..<endIndex]
     return element
   }
+}
+
+extension Collection where Segments == EmptyCollection<Self> {
+  var segments : Segments? { return Segments() }
 }
 
 /// Default implementations of core requirements
