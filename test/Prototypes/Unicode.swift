@@ -3,15 +3,249 @@
 // REQUIRES: executable_test
 
 import StdlibUnittest
-import ICU
+//import ICU
 
-//===----------------------------------------------------------------------===//
-//===--- Logging ----------------------------------------------------------===//
-//===----------------------------------------------------------------------===//
+struct UnicodeIndex : Comparable {
+  var offset: Int64
+  static func == (l: UnicodeIndex, r: UnicodeIndex) -> Bool {
+    return l.offset == r.offset
+  }
+  static func < (l: UnicodeIndex, r: UnicodeIndex) -> Bool {
+    return l.offset < r.offset
+  }
+}
 
-//===----------------------------------------------------------------------===//
-//===----------------------------------------------------------------------===//
-//===----------------------------------------------------------------------===//
+protocol AnyCodeUnits_ {
+  typealias IndexDistance = Int64
+  typealias Index = Int64
+  typealias Element = UInt32
+  var startIndex: Index { get }
+  var endIndex: Index { get }
+  func index(after: Index) -> Index
+  func index(before: Index) -> Index
+  func index(_ i: Index, offsetBy: Int64) -> Index
+  subscript(i: Index) -> Element { get }
+  //  subscript(r: Range<Index>) -> AnyCodeUnits { get }
+
+  func withUnsafeElementStorage<R>(
+    _ body: (UnsafeBufferPointer<Element>?) throws -> R
+  ) rethrows -> R
+  
+  var contiguousStorage : ContiguousStorage<Element>? { get }
+}
+
+struct AnyCodeUnits : RandomAccessCollection, AnyCodeUnits_ {
+  typealias IndexDistance = Int64
+  typealias Index = Int64
+  typealias Element = UInt32
+  
+  let base: AnyCodeUnits_
+
+  // FIXME: associated type deduction seems to need a hint here.
+  typealias Indices = DefaultRandomAccessIndices<AnyCodeUnits>
+  var startIndex: Index { return base.startIndex }
+  var endIndex: Index { return base.endIndex }
+  func index(after i: Index) -> Index { return base.index(after: i) }
+  func index(before i: Index) -> Index { return base.index(before: i) }
+  func index(_ i: Index, offsetBy: Int64) -> Index { return base.index(i, offsetBy: i) }
+  subscript(i: Index) -> Element { return base[i] }
+  
+  public func withUnsafeElementStorage<R>(
+    _ body: (UnsafeBufferPointer<Element>?) throws -> R
+  ) rethrows -> R { return try base.withUnsafeElementStorage(body) }
+  
+  public var contiguousStorage : ContiguousStorage<Element>? {
+    return base.contiguousStorage
+  }
+}
+
+/// Adapts any random access collection of unsigned integer to AnyCodeUnits_
+struct AnyCodeUnitsZeroExtender<
+  Base: RandomAccessCollection
+> : RandomAccessCollection, AnyCodeUnits_
+where Base.Iterator.Element : UnsignedInteger {
+  typealias IndexDistance = Int64
+  typealias Index = Int64
+  typealias Element = UInt32
+  // FIXME: associated type deduction seems to need a hint here.
+  typealias Indices = DefaultRandomAccessIndices<AnyCodeUnitsZeroExtender>
+  
+  let base: Base
+
+  var startIndex: Index { return 0 }
+  var endIndex: Index { return numericCast(base.count) }
+  
+  func index(after i: Index) -> Index {
+    return numericCast(
+      base.offset(of: base.index(after: base.index(atOffset: i))))
+  }
+  
+  func index(before i: Index) -> Index {
+    return numericCast(
+      base.offset(of: base.index(before: base.index(atOffset: i))))
+  }
+  
+  func index(_ i: Index, offsetBy n: Int64) -> Index {
+    return numericCast(
+      base.offset(
+        of: base.index(base.index(atOffset: i),
+          offsetBy: numericCast(n))))
+  }
+  
+  subscript(i: Index) -> Element {
+    return numericCast(base[base.index(atOffset: i)])
+  }
+
+  public func withUnsafeElementStorage<R>(
+    _ body: (UnsafeBufferPointer<Element>?) throws -> R
+  ) rethrows -> R {
+    return try base.withUnsafeElementStorage { b in
+      if let b1 = b {
+        if let b2 = b1 as Any as? UnsafeBufferPointer<Element> {
+          return try body(b2)
+        }
+      }
+      return try body(nil)
+    }
+  }
+  
+  public var contiguousStorage : ContiguousStorage<Element>? {
+    if let b = base.contiguousStorage {
+      return b as Any as? ContiguousStorage<Element>
+    }
+    return nil
+  }
+}
+
+protocol AnyUTF16_ {
+  typealias IndexDistance = Int64
+  typealias Index = UnicodeIndex
+  typealias Element = UInt16
+  var startIndex: Index { get }
+  var endIndex: Index { get }
+  func index(after: Index) -> Index
+  func index(before: Index) -> Index
+  subscript(i: Index) -> Element { get }
+
+  func withUnsafeElementStorage<R>(
+    _ body: (UnsafeBufferPointer<Element>?) throws -> R
+  ) rethrows -> R
+  
+  var contiguousStorage : ContiguousStorage<Element>? { get }
+}
+
+struct AnyUTF16 : BidirectionalCollection, AnyUTF16_ {
+  let base: AnyUTF16_
+  typealias IndexDistance = Int64
+  typealias Index = UnicodeIndex
+  typealias Element = UInt16
+  var startIndex: Index { return base.startIndex }
+  var endIndex: Index { return base.endIndex }
+  func index(after i: Index) -> Index { return base.index(after: i) }
+  func index(before i: Index) -> Index { return base.index(before: i) }
+  subscript(i: Index) -> Element { return base[i] }
+  public func withUnsafeElementStorage<R>(
+    _ body: (UnsafeBufferPointer<Element>?) throws -> R
+  ) rethrows -> R { return try base.withUnsafeElementStorage(body) }
+  
+  public var contiguousStorage : ContiguousStorage<Element>? {
+    return base.contiguousStorage
+  }
+}
+
+/// Adapts any bidirectional collection of unsigned integer to AnyUTF16_
+struct AnyUTF16ZeroExtender<
+  Base: BidirectionalCollection
+> : BidirectionalCollection, AnyUTF16_
+where Base.Iterator.Element : UnsignedInteger {
+  typealias IndexDistance = Int64
+  typealias Index = UnicodeIndex
+  typealias Element = UInt16
+  // FIXME: associated type deduction seems to need a hint here.
+//  typealias Indices = DefaultRandomAccessIndices<AnyCodeUnitsZeroExtender>
+  
+  let base: Base
+
+  var startIndex: Index { return Index(offset: 0) }
+  var endIndex: Index { return Index(offset: numericCast(base.count)) }
+  
+  func index(after i: Index) -> Index {
+    return Index(offset: numericCast(
+        base.offset(of: base.index(after: base.index(atOffset: i.offset)))))
+  }
+  
+  func index(before i: Index) -> Index {
+    return Index(offset: numericCast(
+        base.offset(of: base.index(before: base.index(atOffset: i.offset)))))
+  }
+  
+  func index(_ i: Index, offsetBy n: Int64) -> Index {
+    return Index(offset: numericCast(
+      base.offset(
+        of: base.index(base.index(atOffset: i.offset),
+            offsetBy: numericCast(n)))))
+  }
+  
+  subscript(i: Index) -> Element {
+    return numericCast(base[base.index(atOffset: i.offset)])
+  }
+
+  public func withUnsafeElementStorage<R>(
+    _ body: (UnsafeBufferPointer<Element>?) throws -> R
+  ) rethrows -> R {
+    return try base.withUnsafeElementStorage { b in
+      if let b1 = b {
+        if let b2 = b1 as Any as? UnsafeBufferPointer<Element> {
+          return try body(b2)
+        }
+      }
+      return try body(nil)
+    }
+  }
+  
+  public var contiguousStorage : ContiguousStorage<Element>? {
+    if let b = base.contiguousStorage {
+      return b as Any as? ContiguousStorage<Element>
+    }
+    return nil
+  }
+}
+
+protocol AnyUnicode {
+  var encoding: AnyUnicodeEncoding { get }
+  associatedtype CodeUnits: RandomAccessCollection
+  /* where CodeUnits.Iterator.Element == Encoding.CodeUnit */
+  var codeUnits: CodeUnits {get}
+  
+  associatedtype ValidUTF8View : BidirectionalCollection
+  // where ValidUTF8View.Iterator.Element == UTF8.CodeUnit */
+  // = TranscodedView<CodeUnits, Encoding, UTF8>
+  var utf8: ValidUTF8View {get}
+  
+  associatedtype ValidUTF16View : BidirectionalCollection
+  // where ValidUTF16View.Iterator.Element == UTF16.CodeUnit
+  // = TranscodedView<CodeUnits, Encoding, UTF16>
+  var utf16: ValidUTF16View {get}
+  
+  associatedtype ValidUTF32View : BidirectionalCollection
+  // where ValidUTF32View.Iterator.Element == UTF32.CodeUnit
+  // = TranscodedView<CodeUnits, Encoding, UTF32>
+  var utf32: ValidUTF32View {get}
+  
+  associatedtype ExtendedASCII : BidirectionalCollection // FIXME: Can this be Random Access?
+  /* where ExtendedASCII.Iterator.Element == UInt32 */
+  var extendedASCII: ExtendedASCII {get}
+
+  associatedtype Characters : BidirectionalCollection
+  /* where Characters.Iterator.Element == Character */
+  var characters: Characters { get }
+  
+  func isASCII(scan: Bool/* = true */) -> Bool 
+  func isLatin1(scan: Bool/* = true */) -> Bool 
+  func isNormalizedNFC(scan: Bool/* = true*/) -> Bool
+  func isNormalizedNFD(scan: Bool/* = true*/) -> Bool
+  func isInFastCOrDForm(scan: Bool/* = true*/) -> Bool
+}
 
 protocol Unicode {
   associatedtype Encoding: UnicodeEncoding
@@ -181,4 +415,4 @@ t.test("CharacterView") {
   // (RI) right, while Swift 3 string does not.
   expectFalse(a.elementsEqual(s.characters))
 }
-runAllTests()
+// runAllTests()
