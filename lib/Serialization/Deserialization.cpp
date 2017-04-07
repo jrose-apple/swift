@@ -1332,10 +1332,23 @@ static void filterValues(Type expectedTy, ModuleDecl *expectedModule,
       return true;
     if (!value->hasInterfaceType())
       return true;
-    if (canTy && value->getInterfaceType()->getCanonicalType() != canTy)
-      return true;
     if (value->isStatic() != isStatic)
       return true;
+
+    if (canTy) {
+      if (value->hasClangNode()) {
+        if (!canTy->matches(value->getInterfaceType(),
+                            TypeMatchFlags::AllowTopLevelOptionalMismatch,
+                            canTy->getASTContext().getLazyResolver())) {
+          return true;
+        }
+      } else {
+        if (canTy != value->getInterfaceType()->getCanonicalType()) {
+          return true;
+        }
+      }
+    }
+
     // FIXME: Should be able to move a value from an extension in a derived
     // module to the original definition in a base module.
     if (expectedModule && !value->hasClangNode() &&
