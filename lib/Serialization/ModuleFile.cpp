@@ -1480,6 +1480,15 @@ Status ModuleFile::associateWithFileContext(FileUnit *file,
       continue;
     }
 
+    if (!dependency.isExported()) {
+      // Only load non-exported modules when
+      // - debugging
+      // - working with -enable-testing (where dependencies aren't checked as
+      //   carefully)
+      if (!(ctx.LangOpts.DebuggerSupport || M->isTestingEnabled()))
+        continue;
+    }
+
     StringRef modulePathStr = dependency.RawPath;
     StringRef scopePath;
     if (dependency.isScoped()) {
@@ -1689,6 +1698,8 @@ void ModuleFile::getImportedModules(
     switch (filter) {
     case ModuleDecl::ImportFilter::All:
       // We're including all imports.
+      if (!dep.isLoaded())
+        continue;
       break;
 
     case ModuleDecl::ImportFilter::Private:
@@ -1696,6 +1707,8 @@ void ModuleFile::getImportedModules(
       if (dep.isExported())
         continue;
 
+      assert(dep.isLoaded() &&
+             "if we ask for private imports specifically they would be loaded");
       break;
 
     case ModuleDecl::ImportFilter::Public:
@@ -1703,10 +1716,11 @@ void ModuleFile::getImportedModules(
       if (!dep.isExported())
         continue;
 
+      assert(dep.isLoaded() && "public imports are always loaded");
       break;
     }
 
-    assert(dep.isLoaded());
+
     results.push_back(dep.Import);
   }
 }
