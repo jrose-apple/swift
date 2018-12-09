@@ -557,6 +557,11 @@ ProtocolConformanceRef ModuleFile::readConformance(
     PrettyStackTraceDecl traceTo("... to", proto);
     auto module = getModule(moduleID);
 
+    // FIXME: If the module hasn't been loaded, we probably don't want to fall
+    // back to the current module like this.
+    if (!module)
+      module = getAssociatedModule();
+
     SmallVector<ProtocolConformance *, 2> conformances;
     nominal->lookupConformance(module, proto, conformances);
     PrettyStackTraceModuleFile traceMsg(
@@ -1234,8 +1239,17 @@ static void filterValues(Type expectedTy, ModuleDecl *expectedModule,
 }
 
 Expected<Decl *>
-ModuleFile::resolveCrossReference(ModuleDecl *baseModule, uint32_t pathLen) {
+ModuleFile::resolveCrossReference(ModuleID MID, uint32_t pathLen) {
   using namespace decls_block;
+
+  ModuleDecl *baseModule = getModule(MID);
+  if (!baseModule) {
+    // FIXME: We really want an empty PrettyXRefTrace here.
+    return llvm::make_error<XRefError>("module is not loaded",
+                                       PrettyXRefTrace(*getAssociatedModule()),
+                                       getIdentifier(MID));
+  }
+
   assert(baseModule && "missing dependency");
   PrettyXRefTrace pathTrace(*baseModule);
 
@@ -1555,6 +1569,10 @@ giveUpFastPath:
       GenericSignatureID rawGenericSig;
       XRefExtensionPathPieceLayout::readRecord(scratch, ownerID, rawGenericSig);
       M = getModule(ownerID);
+      if (!M) {
+        return llvm::make_error<XRefError>("module is not loaded",
+                                           pathTrace, getIdentifier(ownerID));
+      }
       pathTrace.addExtension(M);
 
       // Read the generic signature, if we have one.
@@ -1961,7 +1979,7 @@ ModuleDecl *ModuleFile::getModule(ArrayRef<Identifier> name) {
   SmallVector<ImportDecl::AccessPathElement, 4> importPath;
   for (auto pathElem : name)
     importPath.push_back({ pathElem, SourceLoc() });
-  return getContext().getModule(importPath);
+  return getContext().getLoadedModule(importPath);
 }
 
 
@@ -4043,7 +4061,7 @@ ModuleFile::getDeclCheckedImpl(DeclID DID) {
     ModuleID baseModuleID;
     uint32_t pathLen;
     decls_block::XRefLayout::readRecord(scratch, baseModuleID, pathLen);
-    auto resolved = resolveCrossReference(getModule(baseModuleID), pathLen);
+    auto resolved = resolveCrossReference(baseModuleID, pathLen);
     if (!resolved)
       return resolved;
     declOrOffset = resolved.get();

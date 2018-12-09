@@ -455,7 +455,8 @@ public:
       StringRef moduleNameOrMangledBase;
       if (nameIDOrLength < 0) {
         const ModuleDecl *module = File.getModule(-nameIDOrLength);
-        moduleNameOrMangledBase = module->getName().str();
+        if (module)
+          moduleNameOrMangledBase = module->getName().str();
       } else {
         moduleNameOrMangledBase =
             StringRef(reinterpret_cast<const char *>(data), nameIDOrLength);
@@ -1749,7 +1750,7 @@ void ModuleFile::getImportDecls(SmallVectorImpl<Decl *> &Results) {
       if (AccessPath.size() == 1 && AccessPath[0].first == Ctx.StdlibModuleName)
         continue;
 
-      ModuleDecl *M = Ctx.getModule(AccessPath);
+      ModuleDecl *M = Ctx.getLoadedModule(AccessPath);
 
       auto Kind = ImportKind::Module;
       if (!ScopePath.empty()) {

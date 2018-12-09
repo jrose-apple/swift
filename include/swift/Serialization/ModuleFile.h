@@ -590,7 +590,8 @@ private:
   /// because it reads from the cursor, it is not possible to reset the cursor
   /// after reading. Nothing should ever follow an XREF record except
   /// XREF_PATH_PIECE records.
-  llvm::Expected<Decl *> resolveCrossReference(ModuleDecl *M, uint32_t pathLen);
+  llvm::Expected<Decl *> resolveCrossReference(serialization::ModuleID MID,
+                                               uint32_t pathLen);
 
   /// Populates TopLevelIDs for name lookup.
   void buildTopLevelDeclMap();
