@@ -1,1 +1,0 @@
-add_gyb_target(generated_sourcekit_uids ProtocolUIDs.def.gyb)

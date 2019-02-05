@@ -1,3 +1,0 @@
-module VFSMappedModule {
-  header "VFSMappedModule.h"
-}
