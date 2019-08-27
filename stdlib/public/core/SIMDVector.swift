@@ -250,12 +250,44 @@ public protocol _SIMDVectorStorage: SIMDStorage {
   init(_vector: _Vector)
 }
 
-extension _SIMDVectorStorage where Scalar: SignedInteger {
+extension _SIMDVectorStorage where Scalar: BinaryInteger {
+  @_transparent
+  public static func _and(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_and(lhs._vector, rhs._vector))
+  }
+
+  @_transparent
+  public static func _or(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_or(lhs._vector, rhs._vector))
+  }
+
+  @_transparent
+  public static func _shl(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_shl(lhs._vector, rhs._vector))
+  }
+  
+  @_transparent
+  public static func _xor(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_xor(lhs._vector, rhs._vector))
+  }
+
   @_transparent
   public static func _add(_ lhs: Self, _ rhs: Self) -> Self {
     return Self(_vector: Builtin.generic_add(lhs._vector, rhs._vector))
   }
 
+  @_transparent
+  public static func _sub(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_sub(lhs._vector, rhs._vector))
+  }
+
+  @_transparent
+  public static func _mul(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_mul(lhs._vector, rhs._vector))
+  }
+}
+
+extension _SIMDVectorStorage where Scalar: SignedInteger {
   @_transparent
   public static func _div(_ lhs: Self, _ rhs: Self) -> Self {
     return Self(_vector: Builtin.generic_sdiv(lhs._vector, rhs._vector))
@@ -273,11 +305,6 @@ extension _SIMDVectorStorage where Scalar: SignedInteger {
 }
 
 extension _SIMDVectorStorage where Scalar: UnsignedInteger {
-  @_transparent
-  public static func _add(_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(_vector: Builtin.generic_add(lhs._vector, rhs._vector))
-  }
-
   @_transparent
   public static func _div(_ lhs: Self, _ rhs: Self) -> Self {
     return Self(_vector: Builtin.generic_udiv(lhs._vector, rhs._vector))
@@ -301,6 +328,16 @@ extension _SIMDVectorStorage where Scalar: BinaryFloatingPoint {
   }
 
   @_transparent
+  public static func _sub(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_fsub(lhs._vector, rhs._vector))
+  }
+
+  @_transparent
+  public static func _mul(_ lhs: Self, _ rhs: Self) -> Self {
+    return Self(_vector: Builtin.generic_fmul(lhs._vector, rhs._vector))
+  }
+
+  @_transparent
   public static func _div(_ lhs: Self, _ rhs: Self) -> Self {
     return Self(_vector: Builtin.generic_fdiv(lhs._vector, rhs._vector))
   }
@@ -308,38 +345,6 @@ extension _SIMDVectorStorage where Scalar: BinaryFloatingPoint {
   @_transparent
   public static func _rem(_ lhs: Self, _ rhs: Self) -> Self {
     return Self(_vector: Builtin.generic_frem(lhs._vector, rhs._vector))
-  }
-}
-
-extension _SIMDVectorStorage {
-  @_transparent
-  public static func _and(_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(_vector: Builtin.generic_and(lhs._vector, rhs._vector))
-  }
-
-  @_transparent
-  public static func _or(_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(_vector: Builtin.generic_or(lhs._vector, rhs._vector))
-  }
-
-  @_transparent
-  public static func _mul(_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(_vector: Builtin.generic_mul(lhs._vector, rhs._vector))
-  }
-
-  @_transparent
-  public static func _shl(_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(_vector: Builtin.generic_shl(lhs._vector, rhs._vector))
-  }
-
-  @_transparent
-  public static func _sub(_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(_vector: Builtin.generic_sub(lhs._vector, rhs._vector))
-  }
-
-  @_transparent
-  public static func _xor(_ lhs: Self, _ rhs: Self) -> Self {
-    return Self(_vector: Builtin.generic_xor(lhs._vector, rhs._vector))
   }
 }
 
