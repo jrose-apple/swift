@@ -28,9 +28,16 @@ ordinalPositions = ['first', 'second', 'third', 'fourth']
 @frozen
 public struct SIMD${n}<Scalar>: SIMD where Scalar: SIMDScalar {
 
-  public var _storage: Scalar.SIMD${storageN}Storage
-
   public typealias MaskStorage = SIMD${n}<Scalar.SIMDMaskScalar>
+
+  public typealias _InnerStorage = Scalar.SIMD${storageN}Storage
+
+  public var _storage: _InnerStorage
+
+  public var _innerStorage: _InnerStorage {
+    @_transparent get { return _storage }
+    @_transparent set { _storage = newValue }
+  }
 
   /// The number of scalars in the vector.
   @_transparent
@@ -42,6 +49,11 @@ public struct SIMD${n}<Scalar>: SIMD where Scalar: SIMDScalar {
   @_transparent
   public init() {
     _storage = Scalar.SIMD${storageN}Storage()
+  }
+
+  @_transparent
+  public init(_innerStorage: _InnerStorage) {
+    _storage = _innerStorage
   }
 
   /// Accesses the scalar at the specified position.
@@ -218,6 +230,11 @@ extension ${Self}: SIMDScalar {
   @_alignment(${bytes if bytes <= 16 else 16})
   public struct SIMD${n}Storage: _SIMDVectorStorage {
     public typealias _Vector = Builtin.Vec${n}x${BuiltinName}
+
+    public static var _hasVectorRepresentation: Bool {
+      @_transparent
+      get { return true }
+    }
 
     public var _value: _Vector
 

@@ -1100,6 +1100,14 @@ extension SIMD where Scalar: FixedWidthInteger {
         rhs._innerStorage
       ))
     }
+    let lhs2 = lhs
+    let rhs2 = rhs
+    let slowResult =  _slowAdd(lhs2, rhs2)
+    return slowResult
+  }
+
+  @inline(never)
+  public static func _slowAdd(_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self()
     for i in result.indices { result[i] = lhs[i] &+ rhs[i] }
     return result
