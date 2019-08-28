@@ -16,14 +16,20 @@ public let SIMDBasic = [
   BenchmarkInfo(name: "SIMDBasicAdd", runFunction: run_SIMDBasicAdd, tags: [.validation, .api]),
 ]
 
+public func SIMDAdd(_ a: SIMD4<Int32>, _ b: SIMD4<Int32>) -> SIMD4<Int32> {
+  return a &+ b
+}
+
+public func SIMDSub(_ a: SIMD4<Int32>, _ b: SIMD4<Int32>) -> SIMD4<Int32> {
+  return a &- b
+}
+
 @inline(never)
 public func run_SIMDBasicAdd(N: Int) {
-  let range = identity(0..<N)
-
   var a = identity(SIMD4<Int32>(1, 2, 3, 4))
   let b = identity(SIMD4<Int32>(5, 6, 7, 8))
 
-  for _ in range {
+  for _ in 0..<(N * 100) {
     a = a &+ b
   }
 

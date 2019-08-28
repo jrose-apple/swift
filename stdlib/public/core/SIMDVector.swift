@@ -113,6 +113,7 @@ public protocol SIMDStorage {
 
 extension SIMDStorage {
   public static var _hasVectorRepresentation: Bool {
+    // @_alwaysEmitIntoClient
     @_transparent
     get { return false }
   }
@@ -149,42 +150,52 @@ extension SIMDStorage {
 }
 
 extension SIMDStorage {
+  @_alwaysEmitIntoClient
   public static func _add(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorage impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _and(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorage impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _or(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _mul(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _div(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _rem(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _shl(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _shr(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _sub(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
   
+  @_alwaysEmitIntoClient
   public static func _xor(_ lhs: Self, _ rhs: Self) -> Self {
     fatalError("In default SIMDStorageWithOps impl for \(Self.self)")
   }
@@ -393,6 +404,7 @@ public protocol SIMD: SIMDStorage,
 extension SIMD {
   public static var _hasVectorRepresentation: Bool {
     @_transparent
+    @_alwaysEmitIntoClient
     get {
       return Self._InnerStorage._hasVectorRepresentation
     }
@@ -1105,13 +1117,15 @@ extension SIMD where Scalar: FixedWidthInteger {
         rhs._innerStorage
       ))
     }
-    let lhs2 = lhs
-    let rhs2 = rhs
-    let slowResult =  _slowAdd(lhs2, rhs2)
-    return slowResult
+    // let lhs2 = lhs
+    // let rhs2 = rhs
+    // let slowResult =  _slowAdd(lhs2, rhs2)
+    // return slowResult
+    return _slowAdd(lhs, rhs)
   }
 
   @inline(never)
+  @_alwaysEmitIntoClient
   public static func _slowAdd(_ lhs: Self, _ rhs: Self) -> Self {
     var result = Self()
     for i in result.indices { result[i] = lhs[i] &+ rhs[i] }

@@ -233,6 +233,7 @@ extension ${Self}: SIMDScalar {
 
     public static var _hasVectorRepresentation: Bool {
       @_transparent
+      @_alwaysEmitIntoClient
       get { return true }
     }
 
@@ -294,6 +295,7 @@ extension ${Self}: SIMDScalar {
 
     public static var _hasVectorRepresentation: Bool {
       @_transparent
+      @_alwaysEmitIntoClient
       get { return true }
     }
 
