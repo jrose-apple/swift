@@ -26,7 +26,7 @@ ordinalPositions = ['first', 'second', 'third', 'fourth']
 % storageN = 4 if n == 3 else n
 /// A vector of ${spelledNumbers[n]} scalar values.
 @frozen
-public struct SIMD${n}<Scalar>: SIMD where Scalar: SIMDScalar {
+public struct SIMD${n}<Scalar>: SIMD, _SIMDWithInnerStorage where Scalar: SIMDScalar {
 
   public typealias MaskStorage = SIMD${n}<Scalar.SIMDMaskScalar>
 
