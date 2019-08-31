@@ -1158,6 +1158,30 @@ extension SIMD where Scalar: FixedWidthInteger {
   }
 }
 
+// FIXME: Add this as a follow-up in its own PR to improve fully-concrete code
+// in Debug builds (as opposed to code concretized by the optimizer).
+//
+// This works as long as no other code uses `Self._InnerStorage:
+// _SIMDVectorStorage` as a constraint, because then the `_isConcrete` condition
+// will always be true.
+//
+// Primary concern: if used without calling (like, passed to `reduce`), will the
+// inner `_add` be devirtualized and inlined, or will it break
+// backwards-deployment?
+//
+// Primary concern: adds another overload of &+, which could slow down the
+// expression type checker.
+//
+// Secondary concern: more code duplication.
+extension SIMD where Self: _SIMDWithInnerStorage, Self._InnerStorage: _SIMDVectorStorage, Scalar: FixedWidthInteger {
+  @_transparent
+  @_alwaysEmitIntoClient
+  public static func &+(lhs: Self, rhs: Self) -> Self {
+    _precondition(_isConcrete(Self.self))
+    return Self._add(lhs, rhs)
+  }
+}
+
 //  Implementations of floating-point operations. These should eventually all
 //  be replaced with @_semantics to lower directly to vector IR nodes.
 extension SIMD where Scalar: FloatingPoint {
